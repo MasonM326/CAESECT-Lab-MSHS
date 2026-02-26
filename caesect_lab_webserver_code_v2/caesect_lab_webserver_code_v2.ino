@@ -16,7 +16,7 @@ String statePin4 = "off";
 String statePin5 = "off";
 //Output variable to GPIO pins
 const int ledPin4 = 4;
-const int ledPin5 = 6;
+const int ledPin5 = 5; // This comment isa added from montana to test guithub
 
 // Current time
 unsigned long currentTime = millis();
