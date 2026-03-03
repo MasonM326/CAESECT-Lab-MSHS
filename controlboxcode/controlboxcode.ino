@@ -24,8 +24,8 @@ MAX6675 thermocouple3(thermoCLK, thermoCS3, thermoDO); // ambient
 MAX6675 thermocouple4(thermoCLK, thermoCS4, thermoDO); // inlet pipe (NEW)
 
 
-int slowPin  = 4;  // low fan output pin (digital write of 5v will be fine, relay is not necessary)
-int fastPin  = 3;  // high fan output pin (will need to use relay to activate 12 v)
+int slowPin  = A0;  // low fan output pin was pin 4
+int fastPin  = A7;  // high fan output pin was pin 3
 int relayPin = 2;  // relay control pin (heater pin)
 
 
@@ -58,8 +58,8 @@ void setup() {
   digitalWrite(fastPin, LOW);
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, HIGH); // Testing the heater
-  //digitalWrite(slowPin, LOW); // For if you want to test the fan
-
+  digitalWrite(slowPin, LOW); // For if you want to test the fan
+  delay(3000);
 
   // Initialize SD card
   if (!SD.begin(chipSelect)) {
@@ -139,6 +139,7 @@ void loop() {
       Serial.println("FAN HIGH");
     }
 
+    delay(15000);
 
     // Log runtime, average temp, ambient temp, and inlet pipe temp to SD
     logDataToSD(totalRuntime, tempAvg, (int)temp3, (int)temp4);
