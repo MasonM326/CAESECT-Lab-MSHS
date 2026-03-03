@@ -14,7 +14,7 @@ const int thermoCS2 = 10;  // in box #2
 const int thermoCS3 = 9;  // ambient (outside box)
 const int thermoCS4 = 8; // NEW: inlet pipe
 
-LiquidCrystal_I2C lcd(0x27, 16, 2); 
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 
 // Thermocouple instances
@@ -24,9 +24,9 @@ MAX6675 thermocouple3(thermoCLK, thermoCS3, thermoDO); // ambient
 MAX6675 thermocouple4(thermoCLK, thermoCS4, thermoDO); // inlet pipe (NEW)
 
 
-int slowPin  = 9;  // low fan output pin
-int fastPin  = 3;  // high fan output pin
-int relayPin = 2;  // relay control pin
+int slowPin  = 4;  // low fan output pin (digital write of 5v will be fine, relay is not necessary)
+int fastPin  = 3;  // high fan output pin (will need to use relay to activate 12 v)
+int relayPin = 2;  // relay control pin (heater pin)
 
 
 int cold = 50;  // Cold threshold (°F)
@@ -122,17 +122,17 @@ void loop() {
 
     // Control logic based on average of in-box sensors
     if (tempAvg < cold) {
-      digitalWrite(relayPin, LOW);
+      digitalWrite(relayPin, HIGH); // turning on the heater
       digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, LOW);
-      Serial.println("FAN OFF");
-    } else if (tempAvg < hot) {
-      digitalWrite(relayPin, HIGH);
+      Serial.println("FAN OFF AND HEATER ON");
+    } else if (tempAvg < hot && tempAvg > cold) {
+      digitalWrite(relayPin, LOW);
       digitalWrite(slowPin, HIGH); // 5V
       digitalWrite(fastPin, LOW);
       Serial.println("FAN LOW");
     } else { // tempAvg >= hot
-      digitalWrite(relayPin, HIGH);
+      digitalWrite(relayPin, LOW);
       digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, HIGH); // 12V
       Serial.println("FAN HIGH");
