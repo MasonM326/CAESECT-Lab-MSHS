@@ -57,7 +57,8 @@ void setup() {
   pinMode(fastPin, OUTPUT);
   digitalWrite(fastPin, LOW);
   pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, HIGH);
+  digitalWrite(relayPin, HIGH); // Testing the heater
+  //digitalWrite(slowPin, LOW); // For if you want to test the fan
 
 
   // Initialize SD card
