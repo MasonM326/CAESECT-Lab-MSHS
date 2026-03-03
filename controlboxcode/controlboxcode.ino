@@ -1,6 +1,9 @@
+#include <LiquidCrystal_I2C.h>
 #include "max6675.h"
 #include <SPI.h>
 #include <SD.h>
+#include <Wire.h>
+
 
 
 // Thermocouple pins (shared SCK & DO; separate CS per probe)
@@ -10,6 +13,8 @@ const int thermoCS1 = 11;  // in box #1
 const int thermoCS2 = 10;  // in box #2
 const int thermoCS3 = 9;  // ambient (outside box)
 const int thermoCS4 = 8; // NEW: inlet pipe
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
 
 
 // Thermocouple instances
@@ -24,8 +29,8 @@ int fastPin  = 3;  // high fan output pin
 int relayPin = 2;  // relay control pin
 
 
-int cold = 0;  // Cold threshold (°F)
-int hot  = 1;  // Hot threshold (°F)
+int cold = 50;  // Cold threshold (°F)
+int hot  = 90;  // Hot threshold (°F)
 
 
 const int chipSelect = 10; // CS pin for SD card module
@@ -39,6 +44,12 @@ unsigned long totalRuntime = 0;
 void setup() {
   Serial.begin(9600);
   Serial.println("MAX6675 controller start");
+
+
+  lcd.init();
+  lcd.backlight();
+
+
 
 
   pinMode(slowPin, OUTPUT);
@@ -84,6 +95,8 @@ void loop() {
     // Validate readings
     if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4)) {
       Serial.println("Error reading one or more thermocouples!");
+      lcd.setCursor(0, 0);
+      lcd.print("Error 1");
       return;
     }
 
@@ -97,6 +110,14 @@ void loop() {
     Serial.print("Ambient (TC3):     "); Serial.print(temp3); Serial.println(" F");
     Serial.print("Inlet Pipe (TC4):  "); Serial.print(temp4); Serial.println(" F");
     Serial.print("Average (1&2):     "); Serial.print(tempAvg); Serial.println(" F");
+
+    String LCDOutputLine1 = "AVG: " + String(tempAvg) + " AMB: " + String((int)temp3);
+    String LCDOutputLine2 = "IN: " + String((int)temp4);
+
+    lcd.setCursor(0, 0);
+    lcd.print(LCDOutputLine1);
+    lcd.setCursor(0, 1);
+    lcd.print(LCDOutputLine2);
 
 
     // Control logic based on average of in-box sensors
@@ -152,6 +173,3 @@ void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient, int 
     Serial.println("Error opening data_log.txt");
   }
 }
-
-
-
