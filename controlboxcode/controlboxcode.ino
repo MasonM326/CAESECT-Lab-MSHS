@@ -42,6 +42,34 @@ unsigned long previousMillis = 0;
 const unsigned long interval = 5000; // 5 seconds
 unsigned long totalRuntime = 0;
 
+void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient, int tempInlet) {
+  float runtimeSeconds = runtimeMillis / 1000.0;
+
+
+  File dataFile = SD.open("data_log.txt", FILE_WRITE);
+
+
+  if (dataFile) {
+    // CSV: runtime_seconds, avg_inbox_F, ambient_F, inletPipe_F
+    dataFile.print(runtimeSeconds);
+    dataFile.print(", ");
+    dataFile.print(tempAvg);
+    dataFile.print(", ");
+    dataFile.print(tempAmbient);
+    dataFile.print(", ");
+    dataFile.println(tempInlet);
+    dataFile.close();
+
+
+    Serial.print("Logged to SD: ");
+    Serial.print(runtimeSeconds); Serial.print(" s, ");
+    Serial.print(tempAvg);        Serial.print(" F, ");
+    Serial.print(tempAmbient);    Serial.print(" F, ");
+    Serial.print(tempInlet);      Serial.println(" F");
+  } else {
+    Serial.println("Error opening data_log.txt");
+  }
+}
 
 void setup() {
   Serial.begin(9600);
@@ -140,36 +168,42 @@ void loop() {
       digitalWrite(relayPin, HIGH); // turning on the heater
       digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, LOW);
-      Serial.println("a");
-      delay(300000); // run for 5 minutes to make sure it goes over threshold
-      Serial.println("b");
+      
+      //delay(300000); // run for 5 minutes to make sure it goes over threshold
+      
       while (tempAvg <= 60){ // if still not greatly above threshold, we continue until it is
         digitalWrite(relayPin, HIGH); 
         digitalWrite(slowPin, LOW);
         digitalWrite(fastPin, LOW);
       }
+      
       Serial.println("FAN OFF AND HEATER ON");
+      
     } else if (tempAvg < hot && tempAvg > cold) {
-      if (high_fan = true){
-        high_fan = false;
+        if (high_fan = true){
+          high_fan = false;
         digitalWrite(fastPin, LOW);
       }
+      
       digitalWrite(relayPin, LOW);
       digitalWrite(slowPin, HIGH); // 5V
       low_fan = true;
-      delay(5000);
+      
       Serial.println("FAN LOW");
+      
     } else { // tempAvg >= hot
-      if (low_fan = true){
-        low_fan = false;
+        if (low_fan = true){
+          low_fan = false;
+          
         digitalWrite(slowPin, LOW);
       }
       digitalWrite(relayPin, LOW);
       digitalWrite(fastPin, HIGH); // 12V
+      
       high_fan = true;
-      Serial.println("c");
-      delay(300000); // run for 5 minutes to make sure it is under threshold
-      Serial.println("d");
+
+      //delay(300000); // run for 5 minutes to make sure it is under threshold
+
       while (tempAvg >= 80){ // if still not greatly below threshold, we continue until it is
         digitalWrite(relayPin, LOW);
         digitalWrite(fastPin, HIGH); // 12V
@@ -181,35 +215,5 @@ void loop() {
 
     // Log runtime, average temp, ambient temp, and inlet pipe temp to SD
     logDataToSD(totalRuntime, tempAvg, (int)temp3, (int)temp4);
-  }
-}
-
-
-void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient, int tempInlet) {
-  float runtimeSeconds = runtimeMillis / 1000.0;
-
-
-  File dataFile = SD.open("data_log.txt", FILE_WRITE);
-
-
-  if (dataFile) {
-    // CSV: runtime_seconds, avg_inbox_F, ambient_F, inletPipe_F
-    dataFile.print(runtimeSeconds);
-    dataFile.print(", ");
-    dataFile.print(tempAvg);
-    dataFile.print(", ");
-    dataFile.print(tempAmbient);
-    dataFile.print(", ");
-    dataFile.println(tempInlet);
-    dataFile.close();
-
-
-    Serial.print("Logged to SD: ");
-    Serial.print(runtimeSeconds); Serial.print(" s, ");
-    Serial.print(tempAvg);        Serial.print(" F, ");
-    Serial.print(tempAmbient);    Serial.print(" F, ");
-    Serial.print(tempInlet);      Serial.println(" F");
-  } else {
-    Serial.println("Error opening data_log.txt");
   }
 }
