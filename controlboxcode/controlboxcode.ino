@@ -32,6 +32,8 @@ int relayPin = 2;  // relay control pin (heater pin)
 int cold = 50;  // Cold threshold (°F)
 int hot  = 90;  // Hot threshold (°F)
 
+bool low_fan = false;
+bool high_fan = false;
 
 const int chipSelect = 10; // CS pin for SD card module
 
@@ -55,12 +57,24 @@ void setup() {
   pinMode(slowPin, OUTPUT);
   digitalWrite(slowPin, LOW);
   pinMode(fastPin, OUTPUT);
-  digitalWrite(fastPin, LOW);
+  digitalWrite(slowPin, LOW);
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, HIGH); // Testing the heater
-  digitalWrite(slowPin, LOW); // For if you want to test the fan
   delay(3000);
-
+  digitalWrite(relayPin, LOW);
+  delay(1000);
+  Serial.println("Ran Heater");
+  digitalWrite(slowPin, HIGH); // For if you want to test the fan
+  delay(3000);
+  digitalWrite(slowPin, LOW);
+  delay(1000);
+  Serial.println("Ran low fan");
+  digitalWrite(fastPin, HIGH);
+  delay(3000);
+  digitalWrite(fastPin, LOW);
+  delay(1000);
+  Serial.println("Ran high fan");
+  
   // Initialize SD card
   if (!SD.begin(chipSelect)) {
     Serial.println("SD card initialization failed!");
@@ -126,20 +140,44 @@ void loop() {
       digitalWrite(relayPin, HIGH); // turning on the heater
       digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, LOW);
+      Serial.println("a");
+      delay(300000); // run for 5 minutes to make sure it goes over threshold
+      Serial.println("b");
+      while (tempAvg <= 60){ // if still not greatly above threshold, we continue until it is
+        digitalWrite(relayPin, HIGH); 
+        digitalWrite(slowPin, LOW);
+        digitalWrite(fastPin, LOW);
+      }
       Serial.println("FAN OFF AND HEATER ON");
     } else if (tempAvg < hot && tempAvg > cold) {
+      if (high_fan = true){
+        high_fan = false;
+        digitalWrite(fastPin, LOW);
+      }
       digitalWrite(relayPin, LOW);
       digitalWrite(slowPin, HIGH); // 5V
-      digitalWrite(fastPin, LOW);
+      low_fan = true;
+      delay(5000);
       Serial.println("FAN LOW");
     } else { // tempAvg >= hot
+      if (low_fan = true){
+        low_fan = false;
+        digitalWrite(slowPin, LOW);
+      }
       digitalWrite(relayPin, LOW);
-      digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, HIGH); // 12V
+      high_fan = true;
+      Serial.println("c");
+      delay(300000); // run for 5 minutes to make sure it is under threshold
+      Serial.println("d");
+      while (tempAvg >= 80){ // if still not greatly below threshold, we continue until it is
+        digitalWrite(relayPin, LOW);
+        digitalWrite(fastPin, HIGH); // 12V
+      }
       Serial.println("FAN HIGH");
     }
 
-    delay(15000);
+    
 
     // Log runtime, average temp, ambient temp, and inlet pipe temp to SD
     logDataToSD(totalRuntime, tempAvg, (int)temp3, (int)temp4);
