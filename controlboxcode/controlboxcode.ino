@@ -168,6 +168,7 @@ void loop() {
       digitalWrite(relayPin, HIGH); // turning on the heater
       digitalWrite(slowPin, LOW);
       digitalWrite(fastPin, LOW);
+      Serial.println("FAN OFF AND HEATER ON");
       
       //delay(300000); // run for 5 minutes to make sure it goes over threshold
       
@@ -177,7 +178,7 @@ void loop() {
         digitalWrite(fastPin, LOW);
       }
       
-      Serial.println("FAN OFF AND HEATER ON");
+      
       
     } else if (tempAvg < hot && tempAvg > cold) {
         if (high_fan = true){
@@ -199,6 +200,7 @@ void loop() {
       }
       digitalWrite(relayPin, LOW);
       digitalWrite(fastPin, HIGH); // 12V
+      Serial.println("FAN HIGH");
       
       high_fan = true;
 
@@ -208,7 +210,7 @@ void loop() {
         digitalWrite(relayPin, LOW);
         digitalWrite(fastPin, HIGH); // 12V
       }
-      Serial.println("FAN HIGH");
+      
     }
 
     
