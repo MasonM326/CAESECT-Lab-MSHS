@@ -3,9 +3,11 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+long randNumber;
+
 // Replace with your network credentials
-const char* ssid = "REPLACE_WITH_YOUR_SSID";
-const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+const char* ssid = "ESP32-Network";
+const char* password = "abc123";
 
 bool ledState = 0;
 const int ledPin = 2;
@@ -194,18 +196,18 @@ void setup(){
   // Serial port for debugging purposes
   Serial.begin(115200);
 
+  randomSeed(analogRead(0));
+  
+
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
   
   // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
+  WiFi.softAP(ssid, password);
+  Serial.println("Webserver has started")
 
   // Print ESP Local IP Address
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.softAPIP()); // IP is 192.168.4.1
 
   initWebSocket();
 
@@ -220,5 +222,6 @@ void setup(){
 
 void loop() {
   ws.cleanupClients();
+  randNumber = random(300);
   digitalWrite(ledPin, ledState);
 }
