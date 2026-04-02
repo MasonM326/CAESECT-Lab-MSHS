@@ -195,7 +195,7 @@ void loop() {
 
       //delay(300000); // run for 5 minutes to make sure it goes over threshold
       
-      while (tempAvg <= 60){ // if still not greatly above threshold, we continue until it is
+      while (tempAvg <= 60){ // if still not greatly above threshold, we continue until it is. Think this need to be in both if statements?
         tempAvg = temperature_readings();
         delay(2000);
       }

@@ -111,6 +111,8 @@ void loop() {
             }
             client.println("</body></html>");
 
+            client.println("<body><h1>"+ String(random(255)) + "</h1>");
+
             // The HTTP response ends with another blank line
             client.println();
             // Break out of the while loop
