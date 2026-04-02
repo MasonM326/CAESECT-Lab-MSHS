@@ -95,8 +95,9 @@ int temperature_readings(){
 
       // Serial output (you’ll hook up your new TFT later)
       Serial.print("Temp1 (in box #1): "); Serial.print(temp1); Serial.println(" F");
-      Serial.print("Temp2 (in box #2): "); Serial.print(temp2); Serial.println(" F");
-      Serial.print("Ambient (TC3):     "); Serial.print(temp3); Serial.println(" F");
+      Serial.print("Temp2 (in box #2): "); Serial.print(temp2); Serial.println(" F"); / using this temeperature to control the fan
+      
+      Serial.print("Ambient (TC3):     "); Serial.print(temp3); Serial.println(" F"); / using this temperature to control the heater
       Serial.print("Inlet Pipe (TC4):  "); Serial.print(temp4); Serial.println(" F");
       Serial.print("Average (1&2):     "); Serial.print(tempAvg); Serial.println(" F");
 
@@ -110,6 +111,43 @@ int temperature_readings(){
 
       return tempAvg;
 
+int temperature_readings_amb(){
+
+        double temp1 = thermocouple1.readFahrenheit();
+        double temp2 = thermocouple2.readFahrenheit();
+        double temp3 = thermocouple3.readFahrenheit(); // ambient
+        double temp4 = thermocouple4.readFahrenheit(); // inlet pipe (NEW)
+
+
+      // Validate readings
+      if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4)) {
+        Serial.println("Error reading one or more thermocouples!");
+        lcd.setCursor(0, 0);
+        lcd.print("Error 1");
+        return; //may need to comment this out
+      }
+
+      int tempAvg = (int)((temp1 + temp2) / 2.0);
+
+      // Serial output (you’ll hook up your new TFT later)
+      Serial.print("Temp1 (in box #1): "); Serial.print(temp1); Serial.println(" F");
+      Serial.print("Temp2 (in box #2): "); Serial.print(temp2); Serial.println(" F"); / using this temeperature to control the fan
+      
+      Serial.print("Ambient (TC3):     "); Serial.print(temp3); Serial.println(" F"); / using this temperature to control the heater
+      Serial.print("Inlet Pipe (TC4):  "); Serial.print(temp4); Serial.println(" F");
+      Serial.print("Average (1&2):     "); Serial.print(tempAvg); Serial.println(" F");
+
+      String LCDOutputLine1 = "AVG: " + String(tempAvg) + " AMB: " + String((int)temp3);
+      String LCDOutputLine2 = "IN: " + String((int)temp4);
+
+      lcd.setCursor(0, 0);
+      lcd.print(LCDOutputLine1);
+      lcd.setCursor(0, 1);
+      lcd.print(LCDOutputLine2);
+
+      return temp3;
+
+
   
 }
 
@@ -121,7 +159,7 @@ void setup() {
   lcd.backlight();
 
   pinMode(slowPin, OUTPUT);
-  digitalWrite(slowPin, LOW);
+  digitalWrite(slowPin, HIGH);
   pinMode(fastPin, OUTPUT); // fan starts from a digital low on slowpin, digital high on fastpin, and digital high on relay pin
   digitalWrite(fastPin, LOW); // low to high transition on slow pin turns the fan off
   pinMode(relayPin, OUTPUT);
@@ -132,16 +170,16 @@ void setup() {
   Serial.println("Ran Heater"); // Testing the heater
   delay(5000);
   
-  //digitalWrite(relayPin, LOW);
-  //digitalWrite(slowPin, HIGH);
-  //Serial.println("Ran low fan");
-  //delay(5000);
-
-  digitalWrite(slowPin, LOW);
-  //digitalWrite(fastPin, LOW);
   digitalWrite(relayPin, LOW);
-  Serial.println("Ran high fan");
+  digitalWrite(slowPin, LOW);
+  Serial.println("Ran low fan");
   delay(5000);
+
+  //digitalWrite(slowPin, LOW);
+  //digitalWrite(fastPin, LOW);
+  //digitalWrite(relayPin, LOW);
+  //Serial.println("Ran high fan");
+  //delay(5000);
   // Initialize SD card
   if (!SD.begin(chipSelect)) {
     Serial.println("SD card initialization failed!");
@@ -169,9 +207,11 @@ void loop() {
     // Read all thermocouples (use double for isnan checks)
     
     tempAvg = temperature_readings();
+    amb =  temperature_readings_amb();
+    
     delay(2000);
     // Control logic based on average of in-box sensors
-    if (tempAvg < cold) {
+    if (amb < cold) {
      heater = true; // Heater is turned on
       if (low_fan = true)
         {
@@ -179,7 +219,10 @@ void loop() {
           digitalWrite(slowPin, HIGH);
           digitalWrite(relayPin, HIGH);
           Serial.println("Low Fan is turned off and Heater is on");
-        }
+                while (amb <= 60){ // if still not greatly above threshold, we continue until it is. Think this need to be in both if statements?
+                  amb = temperature_readings_amb();
+                  delay(2000);
+                 }
       //else if (high_fan = true)
       //{
       //    high_fan = false;
@@ -191,13 +234,13 @@ void loop() {
       {
         digitalWrite(relayPin, HIGH);
         Serial.println("Heater is on");
-      }
+              while (amb <= 60){ // if still not greatly above threshold, we continue until it is. Think this need to be in both if statements?
+                amb = temperature_readings_amb();
+                delay(2000);
+              }
 
       //delay(300000); // run for 5 minutes to make sure it goes over threshold
       
-      while (tempAvg <= 60){ // if still not greatly above threshold, we continue until it is. Think this need to be in both if statements?
-        tempAvg = temperature_readings();
-        delay(2000);
       }
      
     } else if (tempAvg < hot && tempAvg > cold) {
