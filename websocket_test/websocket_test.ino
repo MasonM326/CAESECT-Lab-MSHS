@@ -1,163 +1,113 @@
-// Import required libraries
+#include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-
-long randNumber;
+#include "LittleFS.h"
+#include <Arduino_JSON.h>
 
 // Replace with your network credentials
 const char* ssid = "ESP32-Network";
 const char* password = "abc123";
 
-bool ledState = 0;
-const int ledPin = 2;
-
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
+// Create a WebSocket object
+
 AsyncWebSocket ws("/ws");
 
-const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML><html>
-<head>
-  <title>ESP Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
-  <style>
-  html {
-    font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-  }
-  h1 {
-    font-size: 1.8rem;
-    color: white;
-  }
-  h2{
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #143642;
-  }
-  .topnav {
-    overflow: hidden;
-    background-color: #143642;
-  }
-  body {
-    margin: 0;
-  }
-  .content {
-    padding: 30px;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-  .card {
-    background-color: #F8F7F9;;
-    box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
-    padding-top:10px;
-    padding-bottom:20px;
-  }
-  .button {
-    padding: 15px 50px;
-    font-size: 24px;
-    text-align: center;
-    outline: none;
-    color: #fff;
-    background-color: #0f8b8d;
-    border: none;
-    border-radius: 5px;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-   }
-   /*.button:hover {background-color: #0f8b8d}*/
-   .button:active {
-     background-color: #0f8b8d;
-     box-shadow: 2 2px #CDCDCD;
-     transform: translateY(2px);
-   }
-   .state {
-     font-size: 1.5rem;
-     color:#8c8c8c;
-     font-weight: bold;
-   }
-  </style>
-<title>ESP Web Server</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:,">
-</head>
-<body>
-  <div class="topnav">
-    <h1>ESP WebSocket Server</h1>
-  </div>
-  <div class="content">
-    <div class="card">
-      <h2>Output - GPIO 2</h2>
-      <p class="state">state: <span id="state">%STATE%</span></p>
-      <p><button id="button" class="button">Toggle</button></p>
-    </div>
-  </div>
-<script>
-  var gateway = `ws://${window.location.hostname}/ws`;
-  var websocket;
-  window.addEventListener('load', onLoad);
-  function initWebSocket() {
-    console.log('Trying to open a WebSocket connection...');
-    websocket = new WebSocket(gateway);
-    websocket.onopen    = onOpen;
-    websocket.onclose   = onClose;
-    websocket.onmessage = onMessage; // <-- add this line
-  }
-  function onOpen(event) {
-    console.log('Connection opened');
-  }
-  function onClose(event) {
-    console.log('Connection closed');
-    setTimeout(initWebSocket, 2000);
-  }
-  function onMessage(event) {
-    var state;
-    if (event.data == "1"){
-      state = "ON";
-    }
-    else{
-      state = "OFF";
-    }
-    document.getElementById('state').innerHTML = state;
-  }
-  function onLoad(event) {
-    initWebSocket();
-    initButton();
-  }
-  function initButton() {
-    document.getElementById('button').addEventListener('click', toggle);
-  }
-  function toggle(){
-    websocket.send('toggle');
-  }
-</script>
-</body>
-</html>
-)rawliteral";
+unsigned long lastTime = 0;
+unsigned long timerDelay = 2000;
 
-void notifyClients() {
-  ws.textAll(String(ledState));
+String message = "";
+String TempValue1 = "0";
+String TempValue2 = "0";
+String TempValue3 = "0";
+String TempValue4 = "0";
+String TempValue5 = "0";
+String heaterStatus = "OFF";
+String fanStatus = "OFF";
+
+
+const int resolution = 8;
+
+//Json Variable to hold temp values
+JSONVar TempValues;
+
+//Get Slider Values
+String getTempValues(){
+  TempValues["tempValue1"] = String(TempValue1);
+  TempValues["tempValue2"] = String(TempValue2);
+  TempValues["tempValue3"] = String(TempValue3);
+  TempValues["tempValue4"] = String(TempValue4);
+  TempValues["tempValue5"] = String(TempValue5);
+  TempValues["heater"] = heaterStatus;
+  TempValues["low_fan"] = fanStatus;
+  String jsonString = JSON.stringify(TempValues);
+  return jsonString;
+}
+
+// Initialize LittleFS
+void initFS() {
+  if (!LittleFS.begin()) {
+    Serial.println("An error has occurred while mounting LittleFS");
+  }
+  else{
+   Serial.println("LittleFS mounted successfully");
+  }
+}
+
+// Initialize WiFi
+void initWiFi() {
+  WiFi.softAP(ssid,password);
+  Serial.print("Connecting to WiFi ..");
+  Serial.println("");
+  Serial.println("IP address: "); // 192.168.4.1
+  Serial.println(WiFi.softAPIP());
+}
+
+void notifyClients(String TempValues) {
+  ws.textAll(TempValues);
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
-    if (strcmp((char*)data, "toggle") == 0) {
-      ledState = !ledState;
-      notifyClients();
+    message = (char*)data;
+    if (message.indexOf("1s") >= 0) {
+      TempValue1 = message.substring(2);
+      Serial.print(getTempValues());
+      notifyClients(getTempValues());
+    }
+    if (message.indexOf("2s") >= 0) {
+      TempValue2 = message.substring(2);
+      Serial.print(getTempValues());
+      notifyClients(getTempValues());
+    }    
+    if (message.indexOf("3s") >= 0) {
+      TempValue3 = message.substring(2);
+      Serial.print(getTempValues());
+      notifyClients(getTempValues());
+    }
+    if (message.indexOf("4s") >= 0) {  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
+    delay(1000);
+  }
+      TempValue4 = message.substring(2);
+      Serial.print(getTempValues());
+      notifyClients(getTempValues());
+    }
+    if (message.indexOf("5s") >= 0) {
+      TempValue5 = message.substring(2);
+      Serial.print(getTempValues());
+      notifyClients(getTempValues());
+    }
+    if (strcmp((char*)data, "getValues") == 0) {
+      notifyClients(getTempValues());
     }
   }
 }
-
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
-             void *arg, uint8_t *data, size_t len) {
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
@@ -179,42 +129,19 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-String processor(const String& var){
-  Serial.println(var);
-  if(var == "STATE"){
-    if (ledState){
-      return "ON";
-    }
-    else{
-      return "OFF";
-    }
-  }
-  return String();
-}
-
-void setup(){
-  // Serial port for debugging purposes
+void setup() {
   Serial.begin(115200);
-
-  randomSeed(analogRead(0));
-  
-
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
-  
-  // Connect to Wi-Fi
-  WiFi.softAP(ssid, password);
-  Serial.println("Webserver has started")
-
-  // Print ESP Local IP Address
-  Serial.println(WiFi.softAPIP()); // IP is 192.168.4.1
+  initFS();
+  initWiFi();
 
   initWebSocket();
-
-  // Route for root / web page
+  
+  // Web Server Root URL
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", index_html, processor);
+    request->send(LittleFS, "/index.html", "text/html");
   });
+  
+  server.serveStatic("/", LittleFS, "/");
 
   // Start server
   server.begin();
@@ -222,6 +149,21 @@ void setup(){
 
 void loop() {
   ws.cleanupClients();
-  randNumber = random(300);
-  digitalWrite(ledPin, ledState);
+
+  if (millis() - lastTime > timerDelay) {
+    // Random float between 65.0 and 85.0
+    TempValue1 = String(random(650, 850) / 10.0);
+    TempValue2 = String(random(650, 850) / 10.0);
+    TempValue3 = String(random(650, 850) / 10.0);
+    TempValue4 = String(random(700, 750) / 10.0); // Ambient is steadier
+    TempValue5 = String(random(600, 900) / 10.0);
+    
+    // Randomize status strings
+    heaterStatus = (random(0, 2) == 1) ? "ON" : "OFF";
+    fanStatus = (random(0, 2) == 1) ? "RUNNING" : "STOPPED";
+
+    notifyClients(getTempValues());
+    lastTime = millis();
+}
+
 }
