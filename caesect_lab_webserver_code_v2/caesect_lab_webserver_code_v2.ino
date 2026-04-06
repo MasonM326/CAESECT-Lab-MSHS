@@ -27,7 +27,6 @@ const long timeoutTime = 2000;
 
 void setup() {
   Serial.begin(115200);
-  
   pinMode(ledPin4, OUTPUT);      // set the LED pin mode
   digitalWrite(ledPin4, 0);      // turn LED off by default
   pinMode(ledPin5, OUTPUT);      // set the LED pin mode
@@ -110,7 +109,7 @@ void loop() {
               client.println("<p><a href=\"/5/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
             client.println("</body></html>");
-
+ 
             client.println("<body><h1>"+ String(random(255)) + "</h1>");
 
             // The HTTP response ends with another blank line
