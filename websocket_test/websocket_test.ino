@@ -14,10 +14,13 @@ AsyncWebSocket ws("/ws");
 // Simulation Variables
 String TempValue1 = "0", TempValue2 = "0", TempValue3 = "0", TempValue4 = "0", TempValue5 = "0";
 String heaterStatus = "OFF", fanStatus = "OFF";
+String ellapsed_hrs = "0";
+String ellapsed_mins = "0";
+String ellapsed_sec = "0";
 
 // Timer variables for the PoC
 unsigned long lastTime = 0;
-unsigned long timerDelay = 2000; // Update every 2 seconds
+unsigned long timerDelay = 1000; // Update every 2 seconds
 
 JSONVar TempValues;
 
@@ -31,6 +34,9 @@ String getTempValues(){
   TempValues["tempValue5"] = TempValue5;
   TempValues["heater"] = heaterStatus;
   TempValues["low_fan"] = fanStatus;
+  TempValues["hrs"] = ellapsed_hrs;
+  TempValues["mins"] = ellapsed_mins;
+  TempValues["secs"] = ellapsed_sec;
   return JSON.stringify(TempValues);
 }
 
@@ -98,6 +104,24 @@ void loop() {
     // Randomize status strings
     heaterStatus = (random(0, 2) == 1) ? "ON" : "OFF";
     fanStatus = (random(0, 2) == 1) ? "RUNNING" : "STOPPED";
+
+    ellapsed_sec = String(ellapsed_sec.toInt() + 1);
+
+    if (ellapsed_sec == "60")
+    {
+      ellapsed_mins = String(ellapsed_mins.toInt() + 1);
+      ellapsed_sec = "0";
+    }
+
+    if (ellapsed_mins == "60")
+    {
+      ellapsed_hrs = String(ellapsed_hrs.toInt() + 1);
+      ellapsed_mins = "0";
+      ellapsed_sec = "0";
+
+    }
+
+    
 
     String outgoingJSON = getTempValues();
     Serial.println("Broadcasting: " + outgoingJSON);
