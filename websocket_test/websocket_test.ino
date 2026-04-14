@@ -47,7 +47,26 @@ void notifyClients() {
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-    data[len] = 0;
+    data[len] #include <Arduino.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include "LittleFS.h"
+#include <Arduino_JSON.h>
+
+const char* ssid = "ESP32-Network";
+const char* password = "abc123";
+
+…// Timer variables for the PoC
+unsigned long lastTime = 0;
+unsigned long timerDelay = 1000; // Update every 2 seconds
+
+JSONVar TempValues;
+
+String getTempValues(){
+  JSONVar TempValues;
+
+  TempValues["tempValue1"] = TempValue1;= 0;
     if (strcmp((char*)data, "getValues") == 0) {
       notifyClients();
     }
