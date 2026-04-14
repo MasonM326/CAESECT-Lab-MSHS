@@ -110,8 +110,8 @@ void loop() {
         TempValue3 = espSerial.readStringUntil('\n');
         TempValue4 = espSerial.readStringUntil('\n');
         TempValue5 = espSerial.readStringUntil('\n');
-        heaterStatus = espSerial.readStringUntil('\n');
         fanStatus = espSerial.readStringUntil('\n');
+        heaterStatus = espSerial.readStringUntil('\n');
       }
   }
 
