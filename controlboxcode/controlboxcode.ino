@@ -63,7 +63,7 @@ void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient) {
   float runtimeSeconds = runtimeMillis / 1000.0;
 
 
-  File dataFile = SD.open("test0.txt", FILE_WRITE);
+  File dataFile = SD.open("050526.txt", FILE_WRITE);
 
 
   if (dataFile) {
@@ -74,6 +74,7 @@ void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient) {
     dataFile.print(", ");
     dataFile.print(tempAmbient);
     dataFile.print("\n");
+    dataFile.flush();
     dataFile.close();
 
 
