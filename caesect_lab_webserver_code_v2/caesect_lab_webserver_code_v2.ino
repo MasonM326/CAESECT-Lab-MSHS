@@ -23,7 +23,7 @@ String ellapsed_sec = "0";
 
 // Timer variables for the PoC
 unsigned long lastTime = 0;
-unsigned long timerDelay = 1000; // Update every 2 seconds
+unsigned long timerDelay = 1000; // Update every second
 
 JSONVar TempValues;
 
@@ -96,7 +96,6 @@ void setup() {
 void loop() {
   ws.cleanupClients();
 
-  // Proof of Concept: Generate random data every 2 seconds
   if (millis() - lastTime > timerDelay) {
     if (espSerial.available()){
     String ard_message = espSerial.readStringUntil('\n');
