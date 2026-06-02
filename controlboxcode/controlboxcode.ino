@@ -6,6 +6,7 @@
 
 
 
+
 // Thermocouple pins (shared SCK & DO; separate CS per probe)
 const int thermoDO  = 12;
 const int thermoCLK = 13;
