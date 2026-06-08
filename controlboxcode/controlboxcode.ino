@@ -3,14 +3,13 @@
 #include <SD.h>
 #include <Wire.h>
 
-// ── STUB: thermocouple hardware replaced with random data for testing ──
-// MAX6675 includes and instances removed; pins kept as comments for reference
-// const int thermoDO  = 12;
-// const int thermoCLK = 13;
-// const int thermoCS1 = 11;
-// const int thermoCS2 = 10;
-// const int thermoCS3 = 9;
-// const int thermoCS4 = 8;
+// Thermocouple pins (shared SCK & DO; separate CS per probe)
+const int thermoDO  = 12;
+const int thermoCLK = 13;
+const int thermoCS1 = 11;  // in box #1
+const int thermoCS2 = 10;  // in box #2
+const int thermoCS3 = 9;  // ambient (outside box)
+const int thermoCS4 = 8; // NEW: inlet pipe
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -22,8 +21,8 @@ int tempAvg = 0;
 int tempAmb = 0;
 
 int amb_cold = 68;
-int cold = 75;
-int hot  = 90;
+int cold = 75;  // Cold threshold (°F)
+int hot  = 90;  // Hot threshold (°F)
 int amb_hot = 70;
 
 bool low_fan  = false;
@@ -35,7 +34,7 @@ bool hot_threshold  = false;
 const int chipSelect = 53;
 
 unsigned long previousMillis = 0;
-const unsigned long interval = 1000;
+const unsigned long interval = 1000; // one second
 unsigned long totalRuntime = 0;
 
 struct SensorData {
@@ -47,11 +46,6 @@ struct SensorData {
   bool  low_fan;
   bool  heater;
 };
-
-// ── Random stub: returns a float in [lo, hi] with one decimal place ──
-float fakeTemp(int lo_tenths, int hi_tenths) {
-  return random(lo_tenths, hi_tenths + 1) / 10.0;
-}
 
 void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient) {
   float runtimeSeconds = runtimeMillis / 1000.0;
@@ -73,12 +67,10 @@ void logDataToSD(unsigned long runtimeMillis, int tempAvg, int tempAmbient) {
 
 SensorData get_all_data(bool current_fan, bool current_heater) {
   SensorData data;
-  // ── FAKE DATA: in-box sensors wander 72–92 °F ──
-  data.temp1 = fakeTemp(720, 920);
-  data.temp2 = fakeTemp(720, 920);
-  // ── FAKE DATA: ambient ~64–70 °F, inlet pipe ~60–68 °F ──
-  data.temp3 = fakeTemp(640, 700);
-  data.temp4 = fakeTemp(600, 680);
+  data.temp1 = thermocouple1.readFahrenheit();
+  data.temp2 = thermocouple2.readFahrenheit();
+  data.temp3 = thermocouple3.readFahrenheit();
+  data.temp4 = thermocouple4.readFahrenheit();
   data.tempAvg = (int)((data.temp1 + data.temp2) / 2.0);
   data.low_fan = current_fan;
   data.heater  = current_heater;
@@ -133,11 +125,19 @@ void sending_data(SensorData data) {
 
 
 int temperature_readings() {
-  // ── FAKE DATA ──
-  float temp1 = fakeTemp(720, 920);
-  float temp2 = fakeTemp(720, 920);
-  float temp3 = fakeTemp(640, 700);  // ambient
-  float temp4 = fakeTemp(600, 680);  // inlet pipe
+  double temp1 = thermocouple1.readFahrenheit();
+  double temp2 = thermocouple2.readFahrenheit();
+  double temp3 = thermocouple3.readFahrenheit(); // ambient
+  double temp4 = thermocouple4.readFahrenheit(); // inlet pipe (NEW)
+
+  if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4)) {
+        //Serial.println("Error reading one or more thermocouples!");
+        lcd.setCursor(0, 0);
+        lcd.print("Error 1");
+        //return; //may need to comment this out
+      }
+
+
 
   int avg = (int)((temp1 + temp2) / 2.0);
 
@@ -150,14 +150,17 @@ int temperature_readings() {
 }
 
 int amb_temperature_readings() {
-  // ── FAKE DATA ──
-  float temp3 = fakeTemp(640, 700);  // ambient only
+  double temp1 = thermocouple1.readFahrenheit();
+  double temp2 = thermocouple2.readFahrenheit();
+  double temp3 = thermocouple3.readFahrenheit(); // ambient
+  double temp4 = thermocouple4.readFahrenheit(); // inlet pipe (NEW)
 
-  // Mirror LCD update so display stays consistent
-  float temp1 = fakeTemp(720, 920);
-  float temp2 = fakeTemp(720, 920);
-  float temp4 = fakeTemp(600, 680);
-  int avg = (int)((temp1 + temp2) / 2.0);
+  if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4)) {
+        //Serial.println("Error reading one or more thermocouples!");
+        lcd.setCursor(0, 0);
+        lcd.print("Error 1");
+        //return; //may need to comment this out
+      }
 
   String LCDOutputLine1 = "AVG: " + String(avg) + " AMB: " + String((int)temp3);
   String LCDOutputLine2 = "IN: "  + String((int)temp4);
@@ -169,8 +172,7 @@ int amb_temperature_readings() {
 
 void setup() {
   Serial.begin(9600);
-  randomSeed(analogRead(A1));  // seed RNG from floating pin
-  //Serial.println("MAX6675 controller start [FAKE DATA MODE]");
+  //Serial.println("MAX6675 controller start");
 
   lcd.init();
   lcd.backlight();
