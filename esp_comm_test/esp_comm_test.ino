@@ -12,7 +12,7 @@ void loop() {
   if (espSerial.available()){
     String ard_message = espSerial.readStringUntil('\n');
     ard_message.trim();
-    Serial.println("Received from Arduino: " + received);
-    espSerial.println("hello from esp!")
+    Serial.println("Received from Arduino: " + ard_message);
+    espSerial.println("hello from esp!");
   }
 }

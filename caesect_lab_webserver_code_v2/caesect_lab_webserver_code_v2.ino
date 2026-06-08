@@ -60,7 +60,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
-      Serial.printf("WebSocket client #%u connected\n", client->id());
+      //Serial.printf("WebSocket client #%u connected\n", client->id());
       break;
     case WS_EVT_DISCONNECT:
       break;
@@ -75,7 +75,8 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 void setup() {
   Serial.begin(115200);
   espSerial.begin(9600, SERIAL_8N1, 27, 26);
-  
+  Serial.println("a");
+
   // Initialize File System [cite: 6]
   if(!LittleFS.begin()) { Serial.println("LittleFS Error"); return; }
   
@@ -89,30 +90,50 @@ void setup() {
     request->send(LittleFS, "/index.html", "text/html");
   });
   server.serveStatic("/", LittleFS, "/");
+  //Serial.println("b");
 
   server.begin();
+
 }
 
 void loop() {
   ws.cleanupClients();
-
-  if (millis() - lastTime > timerDelay) {
+ // if (millis() - lastTime >= timerDelay) {
     if (espSerial.available()){
-    String ard_message = espSerial.readStringUntil('\n');
-    ard_message.trim();
-    Serial.println("Received from Arduino: " + ard_message);
-      if (ard_message == "Are you ready for data ESP?"){
-        espSerial.println("I am");
-
         TempValue1 = espSerial.readStringUntil('\n');
-        TempValue2 = espSerial.readStringUntil('\n');
-        TempValue3 = espSerial.readStringUntil('\n');
-        TempValue4 = espSerial.readStringUntil('\n');
-        TempValue5 = espSerial.readStringUntil('\n');
-        fanStatus = espSerial.readStringUntil('\n');
-        heaterStatus = espSerial.readStringUntil('\n');
-      }
-  }
+        Serial.println("1");
+        delay(50);
+        if (espSerial.available()){
+          TempValue2 = espSerial.readStringUntil('\n');
+          Serial.println("2");
+          delay(50);
+          if (espSerial.available()){
+            TempValue3 = espSerial.readStringUntil('\n');
+            Serial.println("3");
+            delay(50);
+            if (espSerial.available()){
+              TempValue4 = espSerial.readStringUntil('\n');
+              Serial.println("4");
+              delay(50);
+              if (espSerial.available()){
+                TempValue5 = espSerial.readStringUntil('\n');
+                Serial.println("5");
+                delay(50);
+                if (espSerial.available()){
+                  fanStatus = espSerial.readStringUntil('\n');
+                  Serial.println("6");
+                  delay(50);
+                  if (espSerial.available()){
+                    heaterStatus = espSerial.readStringUntil('\n');
+                    Serial.println("7");
+                    delay(50);
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
 
     ellapsed_sec = String(ellapsed_sec.toInt() + 1);
 
@@ -133,9 +154,9 @@ void loop() {
     
 
     String outgoingJSON = getTempValues();
-    Serial.println("Broadcasting: " + outgoingJSON);
+    //Serial.println("Broadcasting: " + outgoingJSON);
 
     ws.textAll(outgoingJSON);
     lastTime = millis();
   }
-}
+//}
