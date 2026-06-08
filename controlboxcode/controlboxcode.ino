@@ -35,7 +35,7 @@ bool hot_threshold  = false;
 const int chipSelect = 53;
 
 unsigned long previousMillis = 0;
-const unsigned long interval = 2000;
+const unsigned long interval = 1000;
 unsigned long totalRuntime = 0;
 
 struct SensorData {
@@ -195,7 +195,7 @@ void setup() {
     //Serial.println("SD card initialized.");
   }
 
-  delay(500);
+  //delay(500);
 }
 
 void loop() {
@@ -208,7 +208,7 @@ void loop() {
     tempAvg = temperature_readings();
     tempAmb = amb_temperature_readings();
     sending_data(get_all_data(low_fan, heater));
-    delay(2000);
+    //delay(2000);
 
     if (tempAvg < cold) {
       if (tempAmb < amb_cold) {
@@ -228,7 +228,7 @@ void loop() {
       while (tempAvg <= 80) {
         tempAvg = temperature_readings();
         sending_data(get_all_data(low_fan, heater));
-        delay(2000);
+        //delay(2000);
       }
     } else if (tempAvg < hot && tempAvg > cold) {
       if (tempAmb > amb_hot) {

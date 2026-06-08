@@ -102,31 +102,31 @@ void loop() {
     if (espSerial.available()){
         TempValue1 = espSerial.readStringUntil('\n');
         Serial.println("1");
-        delay(50);
+        delay(143);
         if (espSerial.available()){
           TempValue2 = espSerial.readStringUntil('\n');
           Serial.println("2");
-          delay(50);
+          delay(143);
           if (espSerial.available()){
             TempValue3 = espSerial.readStringUntil('\n');
             Serial.println("3");
-            delay(50);
+            delay(143);
             if (espSerial.available()){
               TempValue4 = espSerial.readStringUntil('\n');
               Serial.println("4");
-              delay(50);
+              delay(143);
               if (espSerial.available()){
                 TempValue5 = espSerial.readStringUntil('\n');
                 Serial.println("5");
-                delay(50);
+                delay(143);
                 if (espSerial.available()){
                   fanStatus = espSerial.readStringUntil('\n');
                   Serial.println("6");
-                  delay(50);
+                  delay(143);
                   if (espSerial.available()){
                     heaterStatus = espSerial.readStringUntil('\n');
                     Serial.println("7");
-                    delay(50);
+                    delay(143);
                                             }
                                           }
                                         }
