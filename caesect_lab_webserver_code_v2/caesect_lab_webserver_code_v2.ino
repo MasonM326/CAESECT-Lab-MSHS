@@ -77,7 +77,6 @@ void setup() {
   delay(10000); // Ten seconds of delay to start the same time as Arduino
   Serial.begin(115200);
   espSerial.begin(9600, SERIAL_8N1, 27, 26);
-  Serial.println("a");
 
   // Initialize File System [cite: 6]
   if(!LittleFS.begin()) { Serial.println("LittleFS Error"); return; }
@@ -149,7 +148,7 @@ void loop() {
                                   }
                                 }
 
-    if (did_start = true){
+    if (did_start == true){
     
     ellapsed_sec = String(ellapsed_sec.toInt() + 1); // adding one to the time
 

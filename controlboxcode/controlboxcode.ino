@@ -1,4 +1,5 @@
 #include <LiquidCrystal_I2C.h>
+#include "max6675.h"
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -12,6 +13,11 @@ const int thermoCS3 = 9;  // ambient (outside box)
 const int thermoCS4 = 8; // NEW: inlet pipe
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+MAX6675 thermocouple1(thermoCLK, thermoCS1, thermoDO); // in box #1
+MAX6675 thermocouple2(thermoCLK, thermoCS2, thermoDO); // in box #2
+MAX6675 thermocouple3(thermoCLK, thermoCS3, thermoDO); // ambient
+MAX6675 thermocouple4(thermoCLK, thermoCS4, thermoDO); // inlet pipe (NEW)
 
 int slowPin  = A0;
 int fastPin  = A7;
@@ -30,6 +36,9 @@ bool high_fan = false;
 bool heater   = false;
 bool cold_threshold = false;
 bool hot_threshold  = false;
+
+bool heater_button = false;
+bool fan_button = false;
 
 const int chipSelect = 53;
 
@@ -162,6 +171,8 @@ int amb_temperature_readings() {
         //return; //may need to comment this out
       }
 
+  int avg = (int)((temp1 + temp2) / 2.0);
+
   String LCDOutputLine1 = "AVG: " + String(avg) + " AMB: " + String((int)temp3);
   String LCDOutputLine2 = "IN: "  + String((int)temp4);
   lcd.setCursor(0, 0); lcd.print(LCDOutputLine1);
@@ -207,10 +218,16 @@ void loop() {
     previousMillis = currentMillis;
     totalRuntime += interval;
 
+
     tempAvg = temperature_readings();
     tempAmb = amb_temperature_readings();
     sending_data(get_all_data(low_fan, heater));
     //delay(2000);
+
+    //if (heater_button = true){
+      //digitalWrite(relayPin, HIGH);
+      // check for updates from heater button
+    //}
 
     if (tempAvg < cold) {
       if (tempAmb < amb_cold) {
@@ -222,6 +239,8 @@ void loop() {
           temperature_readings();
           sending_data(get_all_data(low_fan, heater));
         } else {
+          high_fan = false;
+          digitalWrite(fastPin, HIGH);
           digitalWrite(relayPin, HIGH);
           temperature_readings();
           sending_data(get_all_data(low_fan, heater));
@@ -230,7 +249,7 @@ void loop() {
       while (tempAvg <= 80) {
         tempAvg = temperature_readings();
         sending_data(get_all_data(low_fan, heater));
-        //delay(2000);
+        delay(1000);
       }
     } else if (tempAvg < hot && tempAvg > cold) {
       if (tempAmb > amb_hot) {
@@ -242,16 +261,56 @@ void loop() {
           temperature_readings();
           sending_data(get_all_data(low_fan, heater));
         } else {
+          high_fan = false;
+          digitalWrite(fastPin, HIGH);
           digitalWrite(slowPin, LOW);
           temperature_readings();
           sending_data(get_all_data(low_fan, heater));
         }
       }
-    } else {
-      digitalWrite(slowPin,  LOW);
-      digitalWrite(relayPin, LOW);
-      temperature_readings();
-      sending_data(get_all_data(low_fan, heater));
+    }
+    else {
+      high_fan = true;
+      if (heater =! false) {
+          heater = false;
+          digitalWrite(relayPin, LOW);
+          digitalWrite(fastPin,  LOW);
+          temperature_readings();
+          sending_data(get_all_data(low_fan, heater));
+        } else {
+          low_fan = false;
+          digitalWrite(slowPin, HIGH);
+          digitalWrite(fastPin, LOW);
+          temperature_readings();
+          sending_data(get_all_data(low_fan, heater));
+        }
+    }
+
+    while (tempAmb > 80){ // run nothing if amb is greater than 80
+      if (heater =! false){
+        heater = false;
+        digitalWrite(relayPin, LOW);
+        temperature_readings();
+        sending_data(get_all_data(low_fan, heater));
+        tempAmb = amb_temperature_readings();
+        delay(1000);
+
+      }else if (low_fan =! false){
+        low_fan = false;
+        digitalWrite(slowPin, HIGH);
+        temperature_readings();
+        sending_data(get_all_data(low_fan, heater));
+        tempAmb = amb_temperature_readings();
+        delay(1000);
+
+      }else if(high_fan =! false){
+        high_fan = false;
+        digitalWrite(fastPin, HIGH);
+        temperature_readings();
+        sending_data(get_all_data(low_fan, heater));
+        tempAmb = amb_temperature_readings();
+        delay(1000);
+      }
     }
 
     logDataToSD(totalRuntime, tempAvg, tempAmb);
