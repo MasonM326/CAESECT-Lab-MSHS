@@ -165,7 +165,7 @@ int temperature_readings() {
   double temp5 = thermocouple5.readFahrenheit(); // amb left
   double temp6 = thermocouple6.readFahrenheit(); // amb right
 
-  if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4)) {
+  if (isnan(temp1) || isnan(temp2) || isnan(temp3) || isnan(temp4) || isnan(temp5) || isnan(temp6)) {
         //Serial.println("Error reading one or more thermocouples!");
         lcd.setCursor(0, 0);
         lcd.print("Error 1");
